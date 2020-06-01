@@ -9,6 +9,7 @@ import numpy as np
 from pyspark.mllib.linalg import SparseVector
 
 from spark_lp.choices import Lang
+from spark_lp.stop_words import stop_words_dict
 
 text_separators = '\s*[.!?]+\s*'
 sent_separators = '[,:;\ \-—]+'
@@ -95,16 +96,7 @@ def filter_stop_words(
 
 @lru_cache(maxsize=None)
 def get_stop_words(language: Lang) -> Set[str]:
-    stopwords = []
-    filenames = {
-        Lang.UK: 'stop_words_ua.csv',
-        Lang.RU: 'stop_words_ru.csv',
-    }
-    path = Path() / 'spark_lp/data' / filenames[language]
-    with open(path, 'r') as file:
-        for row in csv.reader(file):
-            stopwords.append(row[0])
-    return set(stopwords)
+    return stop_words_dict[language]
 
 
 def update_vectors(v1: SparseVector, v2: SparseVector) -> Tuple[list, list]:
