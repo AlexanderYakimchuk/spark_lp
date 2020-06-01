@@ -100,7 +100,7 @@ def get_stop_words(language: Lang) -> Set[str]:
         Lang.UK: 'stop_words_ua.csv',
         Lang.RU: 'stop_words_ru.csv',
     }
-    path = Path().absolute() / 'spark_lp/data' / filenames[language]
+    path = Path() / 'spark_lp/data' / filenames[language]
     with open(path, 'r') as file:
         for row in csv.reader(file):
             stopwords.append(row[0])

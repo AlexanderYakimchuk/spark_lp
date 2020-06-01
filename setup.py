@@ -13,6 +13,6 @@ def parse_requirements() -> List[str]:
 
 setup(name='spark_lp',
       version='0.0.1',
-      packages=['spark_lp'],
+      packages=['spark_lp', 'spark_lp.data'],
       install_requires=parse_requirements()
       )
