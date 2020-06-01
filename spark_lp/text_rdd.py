@@ -14,7 +14,6 @@ from spark_lp.utils import split_to_sentences, split_to_words, normalize_sent, \
     get_stop_words, cos_sim
 from langdetect import detect
 from pyspark.sql.types import *
-from graphframes import *
 import networkx as nx
 
 
