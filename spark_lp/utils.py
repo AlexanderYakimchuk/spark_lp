@@ -97,12 +97,11 @@ def filter_stop_words(
 @lru_cache(maxsize=None)
 def get_stop_words(language: Lang) -> Set[str]:
     stopwords = []
-    data_dir = Path('spark_lp/data')
     filenames = {
         Lang.UK: 'stop_words_ua.csv',
         Lang.RU: 'stop_words_ru.csv',
     }
-    path = data_dir / filenames[language]
+    path = Path() / 'spark_lp/data' / filenames[language]
     with open(path, 'r') as file:
         for row in csv.reader(file):
             stopwords.append(row[0])
