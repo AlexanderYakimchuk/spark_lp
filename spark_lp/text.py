@@ -7,6 +7,7 @@ from spark_lp.itext import IText
 from spark_lp.utils import split_to_sentences, split_to_words, normalize_sent, \
     filter_stop_words, parse_sent, parse_obj_to_dict
 
+
 class Text(IText):
     def __init__(self, text: str):
         self.text: str = text

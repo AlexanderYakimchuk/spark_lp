@@ -75,7 +75,6 @@ def tokenize_sent(sentence: List[str], lang: Lang = Lang.UK) -> List[dict]:
     return words_info
 
 
-
 def normalize_text(
         text: List[List[str]], lang: Lang = Lang.UK, deep=False
 ) -> List[List[str]]:
@@ -101,7 +100,7 @@ def get_stop_words(language: Lang) -> Set[str]:
         Lang.UK: 'stop_words_ua.csv',
         Lang.RU: 'stop_words_ru.csv',
     }
-    path = Path() / 'spark_lp/data' / filenames[language]
+    path = Path().absolute() / 'spark_lp/data' / filenames[language]
     with open(path, 'r') as file:
         for row in csv.reader(file):
             stopwords.append(row[0])
