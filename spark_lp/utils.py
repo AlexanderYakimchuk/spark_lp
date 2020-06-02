@@ -12,7 +12,7 @@ from spark_lp.choices import Lang
 from spark_lp.stop_words import stop_words_dict
 
 text_separators = '\s*[.!?]+\s*'
-sent_separators = '[,:;\ \-—]+'
+sent_separators = '[,:;\ \-—"]+'
 
 
 def clean_text(text: str) -> str:
@@ -24,11 +24,11 @@ def clean_text(text: str) -> str:
 def split_to_sentences(text: str, is_cleaned=False) -> List[str]:
     if not is_cleaned:
         text = clean_text(text)
-    return re.split(text_separators, text)
+    return [sent for sent in re.split(text_separators, text) if sent]
 
 
 def split_to_words(sentence: str) -> List[str]:
-    return re.split(sent_separators, sentence)
+    return [word for word in re.split(sent_separators, sentence) if word]
 
 
 def normalize_word(word: str, lang: Lang = Lang.UK, deep=False) -> str:

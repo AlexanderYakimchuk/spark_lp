@@ -109,14 +109,17 @@ class TextRDD(IText):
 
 
 class TextsCorpus:
-    def __init__(self, sc: SparkContext, texts: List):
+    def __init__(self, sc: SparkContext, texts: Union[List, RDD]):
         self.sc: SparkContext = sc
-        self.texts: RDD = sc.parallelize(self._tokenize_texts(texts))
+        self.texts: RDD = self._tokenize_texts(sc, texts)
         self.idf = self._compute_idf(self.texts)
 
     @staticmethod
-    def _tokenize_texts(texts: List[str]):
-        return [Text(text).process().words for text in texts]
+    def _tokenize_texts(sc: SparkContext, texts: Union[List[str], RDD]):
+        if isinstance(texts, list):
+            return sc.parallelize([Text(text).process().words for text in texts])
+        else:
+            return texts.map(lambda text: Text(text).process().words)
 
     @staticmethod
     def _compute_idf(texts: RDD) -> IDFModel:
@@ -130,8 +133,7 @@ class TextsCorpus:
         return self.idf.transform(tf)
 
     def extend(self, texts: List[str]):
-        self.texts = self.texts.union(
-            self.sc.parallelize(self._tokenize_texts(texts)))
+        self.texts = self.texts.union(self._tokenize_texts(self.sc, texts))
         self.idf = self._compute_idf(self.texts)
 
     def get_similarity(self, text1: str, text2: str) -> float:
