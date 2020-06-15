@@ -35,8 +35,16 @@ class TextRDD(IText):
         self.lang: Lang = Lang(lang)
 
     @property
-    def rdd(self):
+    def sentences(self):
         return self._sents
+
+    @property
+    def words_info(self):
+        return self._words_info
+
+    @property
+    def words(self):
+        return self._words
 
     def split_to_sentences(self):
         sents = self.sc.parallelize(
