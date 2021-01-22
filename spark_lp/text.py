@@ -34,6 +34,7 @@ class Text(IText):
     def split_to_sentences(self):
         sents = split_to_sentences(self.text, is_cleaned=False)
         self._sents = [split_to_words(sent) for sent in sents]
+        return self
 
     def tokenize(self):
         normalized_sents = []
@@ -52,6 +53,7 @@ class Text(IText):
         self._sents = normalized_sents
         self._words = words
         self._words_info = words_info
+        return self
 
     def filter_stop_words(self, stop_words=None):
         self._sents = [filter_stop_words(sent, stop_words, self.lang) for sent

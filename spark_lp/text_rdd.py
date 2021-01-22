@@ -1,3 +1,5 @@
+import uuid
+from hashlib import sha256
 from typing import Union, Set, List
 
 from pyspark.mllib.feature import HashingTF, IDF, IDFModel
@@ -47,19 +49,22 @@ class TextRDD(IText):
         return self._words
 
     def split_to_sentences(self):
+        # sents = split_to_sentences(self.text, is_cleaned=False)
         sents = self.sc.parallelize(
             split_to_sentences(self.text, is_cleaned=False))
         self._origin_sents = sents
+        # self._sents = [split_to_words(s) for s in sents]
         self._sents = sents.map(split_to_words)
 
     def tokenize(self):
         lang = self.lang
+        # self._sents = [normalize_sent(s, lang) for s in self._sents]
         self._sents = self._sents.map(
             lambda sent: normalize_sent(sent, lang))
-        self._words_info = self._sents.flatMap(
-            lambda sent: tokenize_sent(sent, lang))
-        self._words = self._words_info.map(
-            lambda word_info: word_info['normal_form'])
+        # self._words_info = self._sents.flatMap(
+        #     lambda sent: tokenize_sent(sent, lang))
+        # self._words = self._words_info.map(
+        #     lambda word_info: word_info['normal_form'])
 
     def filter_stop_words(self, stop_words=None):
         lang = self.lang
@@ -90,8 +95,10 @@ class TextRDD(IText):
         g = nx.Graph()
         g.add_weighted_edges_from(edges.collect())
         pr = nx.pagerank(g)
-        res = sorted(((i, pr[i], s) for i, s in enumerate(self._origin_sents.collect()) if i in pr),
-               key=lambda x: pr[x[0]], reverse=True)
+        res = sorted(
+            ((i, pr[i], s) for i, s in enumerate(self._origin_sents.collect())
+             if i in pr),
+            key=lambda x: pr[x[0]], reverse=True)
         print('\n'.join([str(r) for r in res]))
         # edges_df = edges.toDF(['src', 'dst', 'weight'])
         #
@@ -125,7 +132,8 @@ class TextsCorpus:
     @staticmethod
     def _tokenize_texts(sc: SparkContext, texts: Union[List[str], RDD]):
         if isinstance(texts, list):
-            return sc.parallelize([Text(text).process().words for text in texts])
+            return sc.parallelize(
+                [Text(text).process().words for text in texts])
         else:
             return texts.map(lambda text: Text(text).process().words)
 
@@ -148,3 +156,41 @@ class TextsCorpus:
         v1 = self.get_tfidf(text1)
         v2 = self.get_tfidf(text2)
         return cos_sim(v1, v2)
+
+
+class ContextText(Text):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.id = sha256(self.text.encode('utf-8')).hexdigest()
+        self.tfidf = None
+
+    def set_tfidf(self, tfidf):
+        self.tfidf = tfidf
+        return self
+
+
+class TextsStream:
+    def __init__(self, sc: SparkContext, texts):
+        self.sc: SparkContext = sc
+        self.texts = self._tokenize_texts(sc, texts)
+        self.windowed_texts = self.texts.window(30, 10)
+        self.windowed_texts = self.windowed_texts.transform(self._compute_tfid)
+        # text_with_keys = self.texts.map(lambda t: (t.id, t))
+        # self.new_texts = text_with_keys.join(tfidfs_with_keys)
+        # self.texts = self.new_texts.map(lambda t: t[1].set_tfidf(t[3]))
+
+    @staticmethod
+    def _tokenize_texts(sc: SparkContext, texts: Union[List[str], RDD]):
+        return texts.map(lambda text: ContextText(text).process())
+
+    @staticmethod
+    def _compute_tfid(texts: RDD) -> IDFModel:
+        tf = HashingTF().transform(texts.map(lambda t: t.words))
+        tf.cache()
+        idf = IDF().fit(tf)
+        tfidfs = idf.transform(tf)
+        text_tfs = texts.zip(tfidfs)
+        return text_tfs.map(lambda t: t[0].set_tfidf(t[1]))
+
+    def get_similarity(self, text1: ContextText, text2: ContextText) -> float:
+        return cos_sim(text1.tfidf, text2.tfidf)
